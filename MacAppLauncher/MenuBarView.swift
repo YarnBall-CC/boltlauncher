@@ -13,7 +13,11 @@ struct MenuBarView: View {
                 Button {
                     appStore.launch(app: app)
                 } label: {
-                    Text("\(app.name) (\(app.launchCount))")
+                    if app.requiresAuthorization {
+                        Label("\(app.name) — Access Required", systemImage: "lock.trianglebadge.exclamationmark")
+                    } else {
+                        Text("\(app.name) (\(app.launchCount))")
+                    }
                 }
             }
         }
@@ -26,6 +30,13 @@ struct MenuBarView: View {
 
         Button("Quit") {
             NSApp.terminate(nil)
+        }
+        .alert(item: $appStore.notice) { notice in
+            Alert(
+                title: Text(notice.title),
+                message: Text(notice.message),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
@@ -46,7 +57,7 @@ private final class SettingsWindowController: NSWindowController {
             rootView: AnyView(SettingsView().environmentObject(appStore))
         )
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 420),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 520),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false

@@ -1,5 +1,6 @@
 # Xcode
 DerivedData/
+.codegraph/
 *.xcuserstate
 xcuserdata/
 

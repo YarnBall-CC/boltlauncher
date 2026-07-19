@@ -16,11 +16,17 @@ struct HotkeyRecorder: View {
                 startRecording()
             }
         }
+        .accessibilityLabel(isRecording ? "Recording hotkey" : "Hotkey \(hotkey.displayString)")
+        .onDisappear(perform: stopRecording)
     }
 
     private func startRecording() {
         isRecording = true
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 {
+                stopRecording()
+                return nil
+            }
             let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             let newHotkey = Hotkey(keyCode: Int(event.keyCode), modifiers: Int(modifiers.rawValue))
             onUpdate(newHotkey)

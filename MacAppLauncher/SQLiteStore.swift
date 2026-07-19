@@ -1,233 +1,324 @@
-import AppKit
 import Foundation
 import SQLite3
 
 private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 final class SQLiteStore {
-    private let db: OpaquePointer?
+    private let db: OpaquePointer
     private let dateFormatter = ISO8601DateFormatter()
 
-    init() {
-        let url = Self.databaseURL()
+    init(databaseURL: URL? = nil) throws {
+        let url = try databaseURL ?? Self.databaseURL()
         let folder = url.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        } catch {
+            throw SQLiteStoreError.fileSystem(error)
+        }
 
         var handle: OpaquePointer?
-        if sqlite3_open(url.path, &handle) != SQLITE_OK {
-            db = nil
-            return
+        let openStatus = sqlite3_open_v2(
+            url.path,
+            &handle,
+            SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX,
+            nil
+        )
+
+        guard openStatus == SQLITE_OK, let handle else {
+            let message = handle.map { String(cString: sqlite3_errmsg($0)) } ?? "Unknown database error"
+            if let handle {
+                sqlite3_close(handle)
+            }
+            throw SQLiteStoreError.operationFailed("Open database", message)
         }
+
         db = handle
-        _ = execute(sql: "PRAGMA foreign_keys = ON;")
-        _ = execute(sql: """
-        CREATE TABLE IF NOT EXISTS apps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bundle_id TEXT NOT NULL UNIQUE,
-            name TEXT NOT NULL,
-            path TEXT NOT NULL,
-            key_code INTEGER NOT NULL,
-            modifiers INTEGER NOT NULL,
-            launch_count INTEGER NOT NULL DEFAULT 0,
-            last_launched_at TEXT
-        );
-        """)
-        _ = execute(sql: """
-        CREATE TABLE IF NOT EXISTS launch_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            app_id INTEGER NOT NULL,
-            launched_at TEXT NOT NULL,
-            FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
-        );
-        """)
-        _ = execute(sql: """
-        CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            int_value INTEGER
-        );
-        """)
+
+        do {
+            try execute(sql: "PRAGMA foreign_keys = ON;")
+            try execute(sql: """
+            CREATE TABLE IF NOT EXISTS apps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bundle_id TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                path TEXT NOT NULL,
+                key_code INTEGER NOT NULL,
+                modifiers INTEGER NOT NULL,
+                launch_count INTEGER NOT NULL DEFAULT 0,
+                last_launched_at TEXT,
+                bookmark_data BLOB
+            );
+            """)
+            try execute(sql: """
+            CREATE TABLE IF NOT EXISTS launch_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                app_id INTEGER NOT NULL,
+                launched_at TEXT NOT NULL,
+                FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
+            );
+            """)
+            try migrateAppsTableIfNeeded()
+        } catch {
+            sqlite3_close(db)
+            throw error
+        }
     }
 
     deinit {
-        if let db {
-            sqlite3_close(db)
-        }
+        sqlite3_close(db)
     }
 
-    func fetchApps() -> [AppEntry] {
-        guard let db else { return [] }
+    func fetchApps() throws -> [AppEntry] {
         let sql = """
-        SELECT id, bundle_id, name, path, key_code, modifiers, launch_count, last_launched_at
+        SELECT id, bundle_id, name, path, key_code, modifiers, launch_count,
+               last_launched_at, bookmark_data
         FROM apps
         ORDER BY name COLLATE NOCASE;
         """
-        var statement: OpaquePointer?
+        let statement = try prepare(sql: sql)
+        defer { sqlite3_finalize(statement) }
+
         var results: [AppEntry] = []
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            while sqlite3_step(statement) == SQLITE_ROW {
-                let id = Int(sqlite3_column_int(statement, 0))
-                let bundleId = stringColumn(statement, index: 1)
-                let name = stringColumn(statement, index: 2)
-                let path = stringColumn(statement, index: 3)
-                let keyCode = Int(sqlite3_column_int(statement, 4))
-                let modifiers = Int(sqlite3_column_int(statement, 5))
-                let launchCount = Int(sqlite3_column_int(statement, 6))
-                let lastLaunchedAt = dateColumn(statement, index: 7)
-                results.append(
-                    AppEntry(
-                        id: id,
-                        bundleId: bundleId,
-                        name: name,
-                        path: path,
-                        hotkey: Hotkey(keyCode: keyCode, modifiers: modifiers),
-                        launchCount: launchCount,
-                        lastLaunchedAt: lastLaunchedAt
-                    )
+        while true {
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE {
+                return results
+            }
+            guard status == SQLITE_ROW else {
+                throw databaseError(operation: "Read applications")
+            }
+
+            results.append(
+                AppEntry(
+                    id: Int(sqlite3_column_int(statement, 0)),
+                    bundleId: stringColumn(statement, index: 1),
+                    name: stringColumn(statement, index: 2),
+                    path: stringColumn(statement, index: 3),
+                    bookmarkData: dataColumn(statement, index: 8),
+                    hotkey: Hotkey(
+                        keyCode: Int(sqlite3_column_int(statement, 4)),
+                        modifiers: Int(sqlite3_column_int(statement, 5))
+                    ),
+                    launchCount: Int(sqlite3_column_int(statement, 6)),
+                    lastLaunchedAt: dateColumn(statement, index: 7)
                 )
-            }
+            )
         }
-        sqlite3_finalize(statement)
-        return results
     }
 
-    func upsertApp(bundleId: String, name: String, path: String) {
-        guard let db else { return }
+    func upsertApp(bundleId: String, name: String, path: String, bookmarkData: Data) throws {
         let sql = """
-        INSERT INTO apps (bundle_id, name, path, key_code, modifiers, launch_count)
-        VALUES (?, ?, ?, -1, 0, 0)
-        ON CONFLICT(bundle_id) DO UPDATE SET name = excluded.name, path = excluded.path;
+        INSERT INTO apps (bundle_id, name, path, key_code, modifiers, launch_count, bookmark_data)
+        VALUES (?, ?, ?, -1, 0, 0, ?)
+        ON CONFLICT(bundle_id) DO UPDATE SET
+            name = excluded.name,
+            path = excluded.path,
+            bookmark_data = excluded.bookmark_data;
         """
-        var statement: OpaquePointer?
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            sqlite3_bind_text(statement, 1, (bundleId as NSString).utf8String, -1, sqliteTransient)
-            sqlite3_bind_text(statement, 2, (name as NSString).utf8String, -1, sqliteTransient)
-            sqlite3_bind_text(statement, 3, (path as NSString).utf8String, -1, sqliteTransient)
-            _ = sqlite3_step(statement)
-        }
-        sqlite3_finalize(statement)
+        let statement = try prepare(sql: sql)
+        defer { sqlite3_finalize(statement) }
+
+        bindText(bundleId, to: statement, index: 1)
+        bindText(name, to: statement, index: 2)
+        bindText(path, to: statement, index: 3)
+        bindData(bookmarkData, to: statement, index: 4)
+        try stepDone(statement, operation: "Save application")
     }
 
-    func updateHotkey(appId: Int, hotkey: Hotkey) {
-        guard let db else { return }
-        let sql = "UPDATE apps SET key_code = ?, modifiers = ? WHERE id = ?;"
-        var statement: OpaquePointer?
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            sqlite3_bind_int(statement, 1, Int32(hotkey.keyCode))
-            sqlite3_bind_int(statement, 2, Int32(hotkey.modifiers))
-            sqlite3_bind_int(statement, 3, Int32(appId))
-            _ = sqlite3_step(statement)
-        }
-        sqlite3_finalize(statement)
+    func updateBookmark(appId: Int, path: String, bookmarkData: Data) throws {
+        let statement = try prepare(sql: "UPDATE apps SET path = ?, bookmark_data = ? WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+
+        bindText(path, to: statement, index: 1)
+        bindData(bookmarkData, to: statement, index: 2)
+        sqlite3_bind_int64(statement, 3, sqlite3_int64(appId))
+        try stepDone(statement, operation: "Update application access")
     }
 
-    func removeApp(appId: Int) {
-        guard let db else { return }
-        let sql = "DELETE FROM apps WHERE id = ?;"
-        var statement: OpaquePointer?
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            sqlite3_bind_int(statement, 1, Int32(appId))
-            _ = sqlite3_step(statement)
-        }
-        sqlite3_finalize(statement)
+    func updateHotkey(appId: Int, hotkey: Hotkey) throws {
+        let statement = try prepare(sql: "UPDATE apps SET key_code = ?, modifiers = ? WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(hotkey.keyCode))
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(hotkey.modifiers))
+        sqlite3_bind_int64(statement, 3, sqlite3_int64(appId))
+        try stepDone(statement, operation: "Update hotkey")
     }
 
-    func logLaunch(appId: Int, at date: Date) {
-        guard let db else { return }
+    func removeApp(appId: Int) throws {
+        let statement = try prepare(sql: "DELETE FROM apps WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(appId))
+        try stepDone(statement, operation: "Remove application")
+    }
+
+    func logLaunch(appId: Int, at date: Date, refreshedBookmark: Data? = nil, path: String? = nil) throws {
         let timestamp = dateFormatter.string(from: date)
+        try execute(sql: "BEGIN IMMEDIATE TRANSACTION;")
 
-        let insertSQL = "INSERT INTO launch_logs (app_id, launched_at) VALUES (?, ?);"
-        var insertStatement: OpaquePointer?
-        if sqlite3_prepare_v2(db, insertSQL, -1, &insertStatement, nil) == SQLITE_OK,
-           let insertStatement {
-            sqlite3_bind_int(insertStatement, 1, Int32(appId))
-            sqlite3_bind_text(insertStatement, 2, (timestamp as NSString).utf8String, -1, sqliteTransient)
-            _ = sqlite3_step(insertStatement)
+        do {
+            let insertStatement = try prepare(
+                sql: "INSERT INTO launch_logs (app_id, launched_at) VALUES (?, ?);"
+            )
+            sqlite3_bind_int64(insertStatement, 1, sqlite3_int64(appId))
+            bindText(timestamp, to: insertStatement, index: 2)
+            do {
+                try stepDone(insertStatement, operation: "Save launch history")
+                sqlite3_finalize(insertStatement)
+            } catch {
+                sqlite3_finalize(insertStatement)
+                throw error
+            }
+
+            let updateStatement: OpaquePointer
+            if let refreshedBookmark, let path {
+                updateStatement = try prepare(sql: """
+                UPDATE apps
+                SET launch_count = launch_count + 1,
+                    last_launched_at = ?,
+                    path = ?,
+                    bookmark_data = ?
+                WHERE id = ?;
+                """)
+                bindText(timestamp, to: updateStatement, index: 1)
+                bindText(path, to: updateStatement, index: 2)
+                bindData(refreshedBookmark, to: updateStatement, index: 3)
+                sqlite3_bind_int64(updateStatement, 4, sqlite3_int64(appId))
+            } else {
+                updateStatement = try prepare(sql: """
+                UPDATE apps
+                SET launch_count = launch_count + 1, last_launched_at = ?
+                WHERE id = ?;
+                """)
+                bindText(timestamp, to: updateStatement, index: 1)
+                sqlite3_bind_int64(updateStatement, 2, sqlite3_int64(appId))
+            }
+
+            do {
+                try stepDone(updateStatement, operation: "Update launch count")
+                sqlite3_finalize(updateStatement)
+            } catch {
+                sqlite3_finalize(updateStatement)
+                throw error
+            }
+
+            try execute(sql: "COMMIT;")
+        } catch {
+            try? execute(sql: "ROLLBACK;")
+            throw error
         }
-        sqlite3_finalize(insertStatement)
-
-        let updateSQL = "UPDATE apps SET launch_count = launch_count + 1, last_launched_at = ? WHERE id = ?;"
-        var updateStatement: OpaquePointer?
-        if sqlite3_prepare_v2(db, updateSQL, -1, &updateStatement, nil) == SQLITE_OK,
-           let updateStatement {
-            sqlite3_bind_text(updateStatement, 1, (timestamp as NSString).utf8String, -1, sqliteTransient)
-            sqlite3_bind_int(updateStatement, 2, Int32(appId))
-            _ = sqlite3_step(updateStatement)
-        }
-        sqlite3_finalize(updateStatement)
     }
 
-    func fetchScreenshotHotkey() -> Hotkey {
-        let keyCode = getSettingInt(key: "screenshot_key_code") ?? 1
-        let modifiers = getSettingInt(key: "screenshot_modifiers")
-            ?? Int(NSEvent.ModifierFlags.option.rawValue)
-        return Hotkey(keyCode: keyCode, modifiers: modifiers)
+    private func migrateAppsTableIfNeeded() throws {
+        guard try !hasColumn("bookmark_data", in: "apps") else { return }
+        try execute(sql: "ALTER TABLE apps ADD COLUMN bookmark_data BLOB;")
     }
 
-    func updateScreenshotHotkey(_ hotkey: Hotkey) {
-        setSettingInt(key: "screenshot_key_code", value: hotkey.keyCode)
-        setSettingInt(key: "screenshot_modifiers", value: hotkey.modifiers)
-    }
+    private func hasColumn(_ column: String, in table: String) throws -> Bool {
+        let statement = try prepare(sql: "PRAGMA table_info(\(table));")
+        defer { sqlite3_finalize(statement) }
 
-    func fetchScreenshotEnabled() -> Bool {
-        let value = getSettingInt(key: "screenshot_enabled")
-        return value == nil ? true : value == 1
-    }
-
-    func updateScreenshotEnabled(_ enabled: Bool) {
-        setSettingInt(key: "screenshot_enabled", value: enabled ? 1 : 0)
-    }
-
-    private func execute(sql: String) -> Bool {
-        guard let db else { return false }
-        return sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK
-    }
-
-    private func getSettingInt(key: String) -> Int? {
-        guard let db else { return nil }
-        let sql = "SELECT int_value FROM settings WHERE key = ? LIMIT 1;"
-        var statement: OpaquePointer?
-        var value: Int?
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            sqlite3_bind_text(statement, 1, (key as NSString).utf8String, -1, sqliteTransient)
-            if sqlite3_step(statement) == SQLITE_ROW {
-                value = Int(sqlite3_column_int(statement, 0))
+        while true {
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE {
+                return false
+            }
+            guard status == SQLITE_ROW else {
+                throw databaseError(operation: "Inspect database schema")
+            }
+            if stringColumn(statement, index: 1) == column {
+                return true
             }
         }
-        sqlite3_finalize(statement)
-        return value
     }
 
-    private func setSettingInt(key: String, value: Int) {
-        guard let db else { return }
-        let sql = """
-        INSERT INTO settings (key, int_value)
-        VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET int_value = excluded.int_value;
-        """
-        var statement: OpaquePointer?
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            sqlite3_bind_text(statement, 1, (key as NSString).utf8String, -1, sqliteTransient)
-            sqlite3_bind_int(statement, 2, Int32(value))
-            _ = sqlite3_step(statement)
+    private func execute(sql: String) throws {
+        var errorPointer: UnsafeMutablePointer<CChar>?
+        let status = sqlite3_exec(db, sql, nil, nil, &errorPointer)
+        defer { sqlite3_free(errorPointer) }
+
+        guard status == SQLITE_OK else {
+            let message = errorPointer.map { String(cString: $0) }
+                ?? String(cString: sqlite3_errmsg(db))
+            throw SQLiteStoreError.operationFailed("Database operation", message)
         }
-        sqlite3_finalize(statement)
+    }
+
+    private func prepare(sql: String) throws -> OpaquePointer {
+        var statement: OpaquePointer?
+        let status = sqlite3_prepare_v2(db, sql, -1, &statement, nil)
+        guard status == SQLITE_OK, let statement else {
+            if let statement {
+                sqlite3_finalize(statement)
+            }
+            throw databaseError(operation: "Prepare database statement")
+        }
+        return statement
+    }
+
+    private func stepDone(_ statement: OpaquePointer, operation: String) throws {
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw databaseError(operation: operation)
+        }
+    }
+
+    private func bindText(_ value: String, to statement: OpaquePointer, index: Int32) {
+        sqlite3_bind_text(statement, index, (value as NSString).utf8String, -1, sqliteTransient)
+    }
+
+    private func bindData(_ value: Data, to statement: OpaquePointer, index: Int32) {
+        _ = value.withUnsafeBytes { bytes in
+            sqlite3_bind_blob(statement, index, bytes.baseAddress, Int32(bytes.count), sqliteTransient)
+        }
     }
 
     private func stringColumn(_ statement: OpaquePointer, index: Int32) -> String {
-        if let cString = sqlite3_column_text(statement, index) {
-            return String(cString: cString)
-        }
-        return ""
+        guard let cString = sqlite3_column_text(statement, index) else { return "" }
+        return String(cString: cString)
+    }
+
+    private func dataColumn(_ statement: OpaquePointer, index: Int32) -> Data? {
+        guard sqlite3_column_type(statement, index) != SQLITE_NULL else { return nil }
+        let length = Int(sqlite3_column_bytes(statement, index))
+        guard length > 0, let bytes = sqlite3_column_blob(statement, index) else { return Data() }
+        return Data(bytes: bytes, count: length)
     }
 
     private func dateColumn(_ statement: OpaquePointer, index: Int32) -> Date? {
         guard let cString = sqlite3_column_text(statement, index) else { return nil }
-        let value = String(cString: cString)
-        return dateFormatter.date(from: value)
+        return dateFormatter.date(from: String(cString: cString))
     }
 
-    private static func databaseURL() -> URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    private func databaseError(operation: String) -> SQLiteStoreError {
+        SQLiteStoreError.operationFailed(operation, String(cString: sqlite3_errmsg(db)))
+    }
+
+    private static func databaseURL() throws -> URL {
+        guard let base = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
+            throw SQLiteStoreError.applicationSupportUnavailable
+        }
         return base.appendingPathComponent("BoltLauncher").appendingPathComponent("launcher.sqlite")
+    }
+}
+
+private enum SQLiteStoreError: LocalizedError {
+    case applicationSupportUnavailable
+    case fileSystem(Error)
+    case operationFailed(String, String)
+
+    var errorDescription: String? {
+        switch self {
+        case .applicationSupportUnavailable:
+            return "The Application Support folder is unavailable."
+        case .fileSystem(let error):
+            return "BoltLauncher could not create its data folder: \(error.localizedDescription)"
+        case .operationFailed(let operation, let message):
+            return "\(operation) failed: \(message)"
+        }
     }
 }

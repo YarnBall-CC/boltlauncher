@@ -38,20 +38,25 @@ struct AppEntry: Identifiable, Equatable {
     let bundleId: String
     let name: String
     let path: String
+    let bookmarkData: Data?
     let hotkey: Hotkey
     let launchCount: Int
     let lastLaunchedAt: Date?
+
+    var requiresAuthorization: Bool {
+        bookmarkData == nil
+    }
 }
 
 enum LaunchResult: Equatable {
-    case launched
+    case launched(refreshedBookmark: Data?, resolvedPath: String?)
     case hidden
-    case failed
 }
 
-enum HotkeyAction: Equatable {
-    case app(Int)
-    case screenshot
+struct AppNotice: Identifiable, Equatable {
+    let id = UUID()
+    let title: String
+    let message: String
 }
 
 enum KeyCodeMapper {
@@ -111,5 +116,9 @@ enum KeyCodeMapper {
             return name
         }
         return "Key\(keyCode)"
+    }
+
+    static func isFunctionKey(_ keyCode: Int) -> Bool {
+        [96, 97, 98, 99, 100, 101, 103, 109, 111, 118, 120, 122].contains(keyCode)
     }
 }
