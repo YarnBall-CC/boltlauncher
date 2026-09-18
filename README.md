@@ -9,6 +9,7 @@ A small macOS menu bar app launcher with global hotkeys.
   - Otherwise, launch or activate it
 - Optionally launch BoltLauncher at login
 - Keep launch counts locally on your Mac
+- Save work scenes with apps, websites, and files or folders under one hotkey
 
 BoltLauncher works offline and does not collect or transmit data. See the [privacy policy](PRIVACY.md).
 
@@ -29,6 +30,8 @@ Existing GitHub release builds are unsigned and not notarized. macOS Gatekeeper 
 3. Choose **Add App...** and select an application.
 4. Record a global hotkey using Command, Option, or Control. Function keys may be used alone.
 5. Optionally enable **Launch at login**.
+
+To make a work scene, add its applications in Settings, choose **Add Scene**, select the applications, then add any websites or files and record a hotkey. Press the scene hotkey or choose its menu bar item to open it. Press it again to hide the selected applications. Files and websites open once per BoltLauncher session to avoid duplicate windows and tabs; hiding a scene does not close them.
 
 Existing configurations created before App Sandbox was enabled show **Grant Access...** once for each saved application.
 

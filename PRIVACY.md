@@ -10,6 +10,7 @@ BoltLauncher stores the following information locally so its features work:
 
 - The applications you select, including their names, bundle identifiers, paths, and security-scoped bookmarks
 - The global hotkeys you assign
+- Scene names, selected applications, website addresses, and paths and security-scoped bookmarks for files or folders you choose
 - Local launch counts and timestamps
 - Your launch-at-login preference, which macOS manages through System Settings
 
@@ -17,13 +18,13 @@ This information stays on your Mac and is not sent to the developer or any third
 
 ## Permissions
 
-BoltLauncher asks you to select each application it may open. macOS provides a security-scoped bookmark for that selected application. BoltLauncher does not use broad file-system access.
+BoltLauncher asks you to select each application, file, or folder it may open. macOS provides a security-scoped bookmark for each selected item. BoltLauncher does not use broad file-system access. Scene websites open in your default browser; your browser's privacy settings and the visited website's policies apply.
 
 Launch at login is optional. You can disable it in BoltLauncher or in System Settings > General > Login Items.
 
 ## Deleting your data
 
-Remove an application in BoltLauncher Settings to delete its saved configuration. To remove all BoltLauncher data, delete the app and its container from:
+Remove an application or scene in BoltLauncher Settings to delete its saved configuration. To remove all BoltLauncher data, delete the app and its container from:
 
 `~/Library/Containers/io.github.chengzi0103.boltlauncher`
 

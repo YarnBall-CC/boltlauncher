@@ -22,6 +22,17 @@ struct MenuBarView: View {
             }
         }
 
+        if !appStore.scenes.isEmpty {
+            Divider()
+            ForEach(appStore.scenes) { scene in
+                Button {
+                    appStore.toggle(scene: scene)
+                } label: {
+                    Label(scene.name, systemImage: "rectangle.3.group")
+                }
+            }
+        }
+
         Divider()
 
         Button("Settings...") {

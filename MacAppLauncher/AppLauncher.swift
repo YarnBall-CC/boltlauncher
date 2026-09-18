@@ -19,19 +19,40 @@ final class AppLauncher {
         activate(app: app, completion: completion)
     }
 
-    private func activate(app: AppEntry, completion: @escaping (Result<LaunchResult, Error>) -> Void) {
-        if let running = runningApp(bundleId: app.bundleId) {
-            let activated = running.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
-            if activated {
-                completion(.success(.launched(refreshedBookmark: nil, resolvedPath: nil)))
-            } else {
-                completion(.failure(AppLauncherError.couldNotActivate(app.name)))
+    func hide(app: AppEntry, completion: @escaping (Bool) -> Void) {
+        guard let running = runningApp(bundleId: app.bundleId) else { completion(true); return }
+        if running.isHidden { completion(true); return }
+        _ = running.hide()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            if running.isHidden { completion(true); return }
+            guard running.activate(options: [.activateAllWindows, .activateIgnoringOtherApps]) else {
+                completion(false)
+                return
             }
+            // ponytail: fixed activation delay; observe workspace activation if timing varies across Macs.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                _ = running.hide()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    completion(running.isHidden)
+                }
+            }
+        }
+    }
+
+    func activate(app: AppEntry, completion: @escaping (Result<LaunchResult, Error>) -> Void) {
+        let running = runningApp(bundleId: app.bundleId)
+        if running?.isActive == true {
+            completion(.success(.launched(refreshedBookmark: nil, resolvedPath: nil)))
             return
         }
 
         guard let bookmarkData = app.bookmarkData else {
-            completion(.failure(AppLauncherError.authorizationRequired(app.name)))
+            if let running,
+               running.activate(options: [.activateAllWindows, .activateIgnoringOtherApps]) {
+                completion(.success(.launched(refreshedBookmark: nil, resolvedPath: nil)))
+            } else {
+                completion(.failure(AppLauncherError.authorizationRequired(app.name)))
+            }
             return
         }
 
@@ -51,16 +72,11 @@ final class AppLauncher {
                 resolved.url.stopAccessingSecurityScopedResource()
             }
 
-            if let appInstance {
-                let activated = appInstance.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
-                if activated {
-                    completion(.success(.launched(
-                        refreshedBookmark: resolved.refreshedBookmark,
-                        resolvedPath: resolved.url.path
-                    )))
-                } else {
-                    completion(.failure(AppLauncherError.couldNotActivate(app.name)))
-                }
+            if appInstance != nil {
+                completion(.success(.launched(
+                    refreshedBookmark: resolved.refreshedBookmark,
+                    resolvedPath: resolved.url.path
+                )))
             } else {
                 completion(.failure(AppLauncherError.openFailed(app.name, error)))
             }
@@ -85,7 +101,7 @@ final class AppLauncher {
         if isStale {
             do {
                 refreshedBookmark = try url.bookmarkData(
-                    options: .withSecurityScope,
+                    options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
                     includingResourceValuesForKeys: nil,
                     relativeTo: nil
                 )
@@ -118,7 +134,6 @@ private enum AppLauncherError: LocalizedError {
     case invalidAuthorization(Error)
     case notRunning(String)
     case couldNotHide(String)
-    case couldNotActivate(String)
     case openFailed(String, Error?)
 
     var errorDescription: String? {
@@ -131,8 +146,6 @@ private enum AppLauncherError: LocalizedError {
             return "\(name) is no longer running."
         case .couldNotHide(let name):
             return "BoltLauncher could not hide \(name)."
-        case .couldNotActivate(let name):
-            return "BoltLauncher could not activate \(name)."
         case .openFailed(let name, let error):
             if let error {
                 return "BoltLauncher could not open \(name): \(error.localizedDescription)"

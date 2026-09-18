@@ -2,20 +2,25 @@ import AppKit
 import Carbon
 import Foundation
 
+enum HotkeyTarget: Hashable {
+    case app(Int)
+    case scene(Int)
+}
+
 final class HotkeyManager {
     private var hotKeyRefs: [UInt32: EventHotKeyRef] = [:]
-    private var hotKeyIdToAppId: [UInt32: Int] = [:]
+    private var hotKeyIdToTarget: [UInt32: HotkeyTarget] = [:]
     private var nextId: UInt32 = 1
     private var handlerInstalled = false
     private var handlerInstallationError: OSStatus?
-    private let onTrigger: (Int) -> Void
+    private let onTrigger: (HotkeyTarget) -> Void
 
-    init(onTrigger: @escaping (Int) -> Void) {
+    init(onTrigger: @escaping (HotkeyTarget) -> Void) {
         self.onTrigger = onTrigger
         installHandlerIfNeeded()
     }
 
-    func register(apps: [AppEntry]) -> [String] {
+    func register(apps: [AppEntry], scenes: [SceneEntry]) -> [String] {
         unregisterAll()
         var issues: [String] = []
 
@@ -27,11 +32,20 @@ final class HotkeyManager {
             if app.hotkey.keyCode < 0 {
                 continue
             }
-            if let status = registerHotkey(for: app) {
+            if let status = registerHotkey(app.hotkey, target: .app(app.id)) {
                 if status == eventHotKeyExistsErr {
                     issues.append("\(app.name): \(app.hotkey.displayString) is already used by another app.")
                 } else {
                     issues.append("\(app.name): \(app.hotkey.displayString) could not be registered (error \(status)).")
+                }
+            }
+        }
+        for scene in scenes where scene.hotkey.keyCode >= 0 {
+            if let status = registerHotkey(scene.hotkey, target: .scene(scene.id)) {
+                if status == eventHotKeyExistsErr {
+                    issues.append("\(scene.name): \(scene.hotkey.displayString) is already used by another app or scene.")
+                } else {
+                    issues.append("\(scene.name): \(scene.hotkey.displayString) could not be registered (error \(status)).")
                 }
             }
         }
@@ -43,18 +57,18 @@ final class HotkeyManager {
             UnregisterEventHotKey(ref)
         }
         hotKeyRefs.removeAll()
-        hotKeyIdToAppId.removeAll()
+        hotKeyIdToTarget.removeAll()
         nextId = 1
     }
 
-    private func registerHotkey(for app: AppEntry) -> OSStatus? {
+    private func registerHotkey(_ hotkey: Hotkey, target: HotkeyTarget) -> OSStatus? {
         let hotKeyID = EventHotKeyID(signature: hotKeySignature, id: nextId)
         var ref: EventHotKeyRef?
-        let modifiers = carbonModifiers(from: app.hotkey.modifierFlags)
-        let status = RegisterEventHotKey(UInt32(app.hotkey.keyCode), modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
+        let modifiers = carbonModifiers(from: hotkey.modifierFlags)
+        let status = RegisterEventHotKey(UInt32(hotkey.keyCode), modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
         if status == noErr, let ref {
             hotKeyRefs[hotKeyID.id] = ref
-            hotKeyIdToAppId[hotKeyID.id] = app.id
+            hotKeyIdToTarget[hotKeyID.id] = target
             nextId += 1
             return nil
         }
@@ -92,9 +106,9 @@ final class HotkeyManager {
     }
 
     private func handleHotKey(id: UInt32) {
-        guard let appId = hotKeyIdToAppId[id] else { return }
+        guard let target = hotKeyIdToTarget[id] else { return }
         DispatchQueue.main.async { [onTrigger] in
-            onTrigger(appId)
+            onTrigger(target)
         }
     }
 

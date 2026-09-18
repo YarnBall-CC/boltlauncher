@@ -43,6 +43,21 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Scenes") {
+                HStack {
+                    Text("Open a group of apps and resources with one hotkey. Press it again to hide the apps.")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Add Scene") {
+                        appStore.addScene()
+                    }
+                }
+
+                ForEach(appStore.scenes) { scene in
+                    SceneRow(scene: scene)
+                }
+            }
+
             if !appStore.hotkeyIssues.isEmpty {
                 Section("Hotkey Issues") {
                     ForEach(appStore.hotkeyIssues, id: \.self) { issue in
@@ -53,7 +68,7 @@ struct SettingsView: View {
             }
 
             Section("Privacy") {
-                Text("BoltLauncher stores app permissions and launch counts only on this Mac. It does not collect or transmit data.")
+                Text("BoltLauncher stores app permissions, scene resources, and launch counts only on this Mac. It does not collect or transmit data.")
                     .foregroundStyle(.secondary)
                 Link("Privacy Policy", destination: AppStore.privacyPolicyURL)
             }
@@ -68,6 +83,64 @@ struct SettingsView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+    }
+}
+
+private struct SceneRow: View {
+    @EnvironmentObject private var appStore: AppStore
+    let scene: SceneEntry
+    @State private var name: String
+    @State private var website = ""
+
+    init(scene: SceneEntry) {
+        self.scene = scene
+        _name = State(initialValue: scene.name)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                TextField("Scene name", text: $name)
+                    .onSubmit { appStore.renameScene(scene, to: name) }
+                Button("Rename") { appStore.renameScene(scene, to: name) }
+                    .disabled(name == scene.name)
+                HotkeyRecorder(hotkey: scene.hotkey) { hotkey in
+                    appStore.updateHotkey(for: scene, hotkey: hotkey)
+                }
+                Button("Remove", role: .destructive) { appStore.remove(scene: scene) }
+            }
+
+            Text("Choose the apps this scene opens. Its first selected app comes to the front.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ForEach(appStore.apps) { app in
+                Toggle(app.name, isOn: Binding(
+                    get: { scene.appIDs.contains(app.id) },
+                    set: { appStore.setSceneApp(app, in: scene, included: $0) }
+                ))
+            }
+
+            HStack {
+                TextField("https://example.com/project", text: $website)
+                    .onSubmit { addWebsite() }
+                Button("Add Website") { addWebsite() }
+                Button("Add File or Folder...") { appStore.addFiles(to: scene) }
+            }
+            ForEach(scene.resources) { resource in
+                HStack {
+                    Label(resource.title, systemImage: resource.kind == .website ? "link" : "doc")
+                        .lineLimit(1)
+                    Spacer()
+                    Button("Remove") { appStore.remove(resource) }
+                }
+            }
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func addWebsite() {
+        appStore.addWebsite(website, to: scene)
+        if SceneResource.validatedWebsite(website) != nil { website = "" }
     }
 }
 

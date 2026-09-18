@@ -58,6 +58,27 @@ final class SQLiteStore {
                 FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
             );
             """)
+            try execute(sql: """
+            CREATE TABLE IF NOT EXISTS scenes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                key_code INTEGER NOT NULL DEFAULT -1,
+                modifiers INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS scene_apps (
+                scene_id INTEGER NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+                app_id INTEGER NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+                PRIMARY KEY(scene_id, app_id)
+            );
+            CREATE TABLE IF NOT EXISTS scene_resources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scene_id INTEGER NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+                kind TEXT NOT NULL CHECK(kind IN ('website', 'file')),
+                value TEXT NOT NULL,
+                bookmark_data BLOB,
+                UNIQUE(scene_id, kind, value)
+            );
+            """)
             try migrateAppsTableIfNeeded()
         } catch {
             sqlite3_close(db)
@@ -152,6 +173,137 @@ final class SQLiteStore {
 
         sqlite3_bind_int64(statement, 1, sqlite3_int64(appId))
         try stepDone(statement, operation: "Remove application")
+    }
+
+    func fetchScenes() throws -> [SceneEntry] {
+        let statement = try prepare(sql: "SELECT id, name, key_code, modifiers FROM scenes ORDER BY name COLLATE NOCASE;")
+        defer { sqlite3_finalize(statement) }
+
+        var scenes: [SceneEntry] = []
+        while true {
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return scenes }
+            guard status == SQLITE_ROW else { throw databaseError(operation: "Read scenes") }
+            let id = Int(sqlite3_column_int64(statement, 0))
+            scenes.append(SceneEntry(
+                id: id,
+                name: stringColumn(statement, index: 1),
+                hotkey: Hotkey(
+                    keyCode: Int(sqlite3_column_int(statement, 2)),
+                    modifiers: Int(sqlite3_column_int(statement, 3))
+                ),
+                appIDs: try fetchSceneAppIDs(sceneId: id),
+                resources: try fetchSceneResources(sceneId: id)
+            ))
+        }
+    }
+
+    func createScene(name: String) throws {
+        let statement = try prepare(sql: "INSERT INTO scenes (name) VALUES (?);")
+        defer { sqlite3_finalize(statement) }
+        bindText(name, to: statement, index: 1)
+        try stepDone(statement, operation: "Create scene")
+    }
+
+    func renameScene(id: Int, name: String) throws {
+        let statement = try prepare(sql: "UPDATE scenes SET name = ? WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+        bindText(name, to: statement, index: 1)
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(id))
+        try stepDone(statement, operation: "Rename scene")
+    }
+
+    func updateSceneHotkey(id: Int, hotkey: Hotkey) throws {
+        let statement = try prepare(sql: "UPDATE scenes SET key_code = ?, modifiers = ? WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(hotkey.keyCode))
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(hotkey.modifiers))
+        sqlite3_bind_int64(statement, 3, sqlite3_int64(id))
+        try stepDone(statement, operation: "Update scene hotkey")
+    }
+
+    func setSceneApp(sceneId: Int, appId: Int, included: Bool) throws {
+        let sql = included
+            ? "INSERT OR IGNORE INTO scene_apps (scene_id, app_id) VALUES (?, ?);"
+            : "DELETE FROM scene_apps WHERE scene_id = ? AND app_id = ?;"
+        let statement = try prepare(sql: sql)
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(sceneId))
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(appId))
+        try stepDone(statement, operation: "Update scene applications")
+    }
+
+    func addSceneResource(sceneId: Int, kind: SceneResource.Kind, value: String, bookmarkData: Data?) throws {
+        let statement = try prepare(sql: """
+        INSERT OR IGNORE INTO scene_resources (scene_id, kind, value, bookmark_data) VALUES (?, ?, ?, ?);
+        """)
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(sceneId))
+        bindText(kind.rawValue, to: statement, index: 2)
+        bindText(value, to: statement, index: 3)
+        if let bookmarkData {
+            bindData(bookmarkData, to: statement, index: 4)
+        } else {
+            sqlite3_bind_null(statement, 4)
+        }
+        try stepDone(statement, operation: "Add scene resource")
+    }
+
+    func updateSceneResourceBookmark(id: Int, bookmarkData: Data) throws {
+        let statement = try prepare(sql: "UPDATE scene_resources SET bookmark_data = ? WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+        bindData(bookmarkData, to: statement, index: 1)
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(id))
+        try stepDone(statement, operation: "Refresh scene resource access")
+    }
+
+    func removeSceneResource(id: Int) throws {
+        let statement = try prepare(sql: "DELETE FROM scene_resources WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(id))
+        try stepDone(statement, operation: "Remove scene resource")
+    }
+
+    func removeScene(id: Int) throws {
+        let statement = try prepare(sql: "DELETE FROM scenes WHERE id = ?;")
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(id))
+        try stepDone(statement, operation: "Remove scene")
+    }
+
+    // ponytail: scenes are few; batch these reads if a user can create hundreds of them.
+    private func fetchSceneAppIDs(sceneId: Int) throws -> [Int] {
+        let statement = try prepare(sql: "SELECT app_id FROM scene_apps WHERE scene_id = ? ORDER BY rowid;")
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(sceneId))
+        var ids: [Int] = []
+        while true {
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return ids }
+            guard status == SQLITE_ROW else { throw databaseError(operation: "Read scene applications") }
+            ids.append(Int(sqlite3_column_int64(statement, 0)))
+        }
+    }
+
+    private func fetchSceneResources(sceneId: Int) throws -> [SceneResource] {
+        let statement = try prepare(sql: """
+        SELECT id, kind, value, bookmark_data FROM scene_resources WHERE scene_id = ? ORDER BY id;
+        """)
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(sceneId))
+        var resources: [SceneResource] = []
+        while true {
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return resources }
+            guard status == SQLITE_ROW else { throw databaseError(operation: "Read scene resources") }
+            guard let kind = SceneResource.Kind(rawValue: stringColumn(statement, index: 1)) else { continue }
+            resources.append(SceneResource(
+                id: Int(sqlite3_column_int64(statement, 0)),
+                kind: kind,
+                value: stringColumn(statement, index: 2),
+                bookmarkData: dataColumn(statement, index: 3)
+            ))
+        }
     }
 
     func logLaunch(appId: Int, at date: Date, refreshedBookmark: Data? = nil, path: String? = nil) throws {

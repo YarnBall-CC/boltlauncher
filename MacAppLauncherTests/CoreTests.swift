@@ -95,4 +95,38 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(app.bookmarkData, bookmark)
         XCTAssertEqual(app.launchCount, 4)
     }
+
+    func testScenePersistsResourcesHotkeyAndAppDeletion() throws {
+        let databaseURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            .appendingPathComponent("launcher.sqlite")
+        let store = try SQLiteStore(databaseURL: databaseURL)
+        try store.upsertApp(
+            bundleId: "com.example.Editor",
+            name: "Editor",
+            path: "/Applications/Editor.app",
+            bookmarkData: Data([1])
+        )
+        let appID = try XCTUnwrap(store.fetchApps().first?.id)
+        try store.createScene(name: "Writing")
+        let sceneID = try XCTUnwrap(store.fetchScenes().first?.id)
+        try store.setSceneApp(sceneId: sceneID, appId: appID, included: true)
+        try store.updateSceneHotkey(id: sceneID, hotkey: Hotkey(keyCode: 0, modifiers: 256))
+        try store.addSceneResource(sceneId: sceneID, kind: .website, value: "https://example.com", bookmarkData: nil)
+        try store.addSceneResource(sceneId: sceneID, kind: .file, value: "/tmp/notes.txt", bookmarkData: Data([2]))
+
+        var scene = try XCTUnwrap(store.fetchScenes().first)
+        XCTAssertEqual(scene.appIDs, [appID])
+        XCTAssertEqual(scene.hotkey.keyCode, 0)
+        XCTAssertEqual(scene.resources.map(\.kind), [.website, .file])
+        XCTAssertNil(SceneResource.validatedWebsite("javascript:alert(1)"))
+        XCTAssertEqual(SceneResource.validatedWebsite(" https://example.com "), "https://example.com")
+
+        try store.removeApp(appId: appID)
+        scene = try XCTUnwrap(store.fetchScenes().first)
+        XCTAssertTrue(scene.appIDs.isEmpty)
+        XCTAssertEqual(scene.resources.count, 2)
+        try store.removeScene(id: sceneID)
+        XCTAssertTrue(try store.fetchScenes().isEmpty)
+    }
 }

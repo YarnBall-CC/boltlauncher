@@ -48,6 +48,39 @@ struct AppEntry: Identifiable, Equatable {
     }
 }
 
+struct SceneEntry: Identifiable, Equatable {
+    let id: Int
+    let name: String
+    let hotkey: Hotkey
+    let appIDs: [Int]
+    let resources: [SceneResource]
+}
+
+struct SceneResource: Identifiable, Equatable {
+    enum Kind: String {
+        case website
+        case file
+    }
+
+    let id: Int
+    let kind: Kind
+    let value: String
+    let bookmarkData: Data?
+
+    var title: String {
+        kind == .file ? URL(fileURLWithPath: value).lastPathComponent : value
+    }
+
+    static func validatedWebsite(_ input: String) -> String? {
+        let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: value),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              let host = url.host, !host.isEmpty else { return nil }
+        return url.absoluteString
+    }
+}
+
 enum LaunchResult: Equatable {
     case launched(refreshedBookmark: Data?, resolvedPath: String?)
     case hidden
