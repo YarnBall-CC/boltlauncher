@@ -11,7 +11,7 @@ A small macOS menu bar app launcher with global hotkeys.
 - Keep launch counts locally on your Mac
 - Save work scenes with apps, websites, and files or folders under one hotkey
 
-BoltLauncher works offline and does not collect or transmit data. See the [privacy policy](PRIVACY.md).
+BoltLauncher's app shortcuts work offline; scene websites open in your default browser. BoltLauncher does not collect or transmit data. See the [privacy policy](PRIVACY.md).
 
 ## Mac App Store status
 

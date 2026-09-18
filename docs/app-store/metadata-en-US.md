@@ -10,7 +10,7 @@ Global hotkeys for your apps
 
 ## Promotional text
 
-Open or hide your favorite Mac apps instantly from anywhere with shortcuts you choose.
+Open your favorite Mac apps instantly, or start a whole work scene with one shortcut.
 
 ## Description
 
@@ -25,9 +25,14 @@ Features:
 - Open, activate, or hide apps with one shortcut
 - Launch BoltLauncher automatically when you sign in
 - Keep simple launch counts locally on your Mac
-- Work entirely offline with no account, analytics, or tracking
+- Create work scenes with multiple apps, websites, files, and folders under one shortcut
+- Use app shortcuts offline, with no account, analytics, or tracking
 
-BoltLauncher uses the macOS App Sandbox and stores its settings only on your Mac.
+BoltLauncher uses the macOS App Sandbox and stores its settings only on your Mac. Scene websites open in your default browser.
+
+## What's New in 1.1.0
+
+Work Scenes let you open a group of apps and optional websites, files, or folders with one shortcut. Press the shortcut again to hide the scene's apps. This update also improves app activation and file access reliability.
 
 ## Keywords
 

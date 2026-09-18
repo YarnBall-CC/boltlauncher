@@ -42,7 +42,9 @@ test -f "$task_icon"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$task_info")" = \
   'io.github.chengzi0103.boltlauncher'
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$task_info")" = \
-  '1.0.0'
+  '1.1.0'
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$task_info")" = \
+  '4'
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSApplicationCategoryType' "$task_info")" = \
   'public.app-category.utilities'
 test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' MacAppLauncher/MacAppLauncher.entitlements)" = \

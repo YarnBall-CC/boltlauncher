@@ -24,8 +24,8 @@ The script validates the property lists and produces an unsigned Release archive
 
 ## Versioning
 
-- Marketing version: `1.0.0`
-- Build number: `1`
+- Marketing version: `1.1.0`
+- Build number: `4`
 
 Increase `CURRENT_PROJECT_VERSION` for every uploaded build. Mac build numbers must always increase, even when the marketing version changes.
 
@@ -52,7 +52,7 @@ Review the answers in App Store Connect rather than copying them blindly if the 
 
 Suggested review notes:
 
-> BoltLauncher is a menu bar utility and intentionally has no Dock icon. Open the menu bar bolt icon, choose Settings, add an application, and assign a global hotkey. The app uses App Sandbox and requests access only to applications explicitly selected by the user. Launch at login is optional and uses SMAppService. The app has no account, network service, analytics, or in-app purchases.
+> BoltLauncher is a menu bar utility and intentionally has no Dock icon. Open the menu bar bolt icon, choose Settings, add an application, and assign a global hotkey. To try Work Scenes, add a scene, select one or more apps, and optionally add a website or file. The scene hotkey opens them together; pressing it again hides the scene's apps. The app uses App Sandbox and requests access only to applications and files explicitly selected by the user. Launch at login is optional and uses SMAppService. The app has no account, analytics, or in-app purchases. Scene websites open in the user's default browser.
 
 ## Required product assets
 
