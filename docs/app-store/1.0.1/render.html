@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=2880, initial-scale=1">
+  <title>BoltLauncher App Store Screenshots</title>
+  <style>
+    :root {
+      --ink: #071733;
+      --ink-soft: #38506f;
+      --blue: #1677ea;
+      --blue-deep: #2f36a7;
+      --yellow: #ffe066;
+      --line: rgba(22, 119, 234, 0.18);
+      --glass: rgba(255, 255, 255, 0.72);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 2880px;
+      height: 1800px;
+      margin: 0;
+      overflow: hidden;
+      background: #eaf5ff;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .slide {
+      position: relative;
+      display: none;
+      width: 2880px;
+      height: 1800px;
+      overflow: hidden;
+      isolation: isolate;
+      background: #eaf5ff;
+    }
+
+    .slide.active { display: block; }
+
+    .backdrop {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.03);
+      z-index: -4;
+    }
+
+    .wash {
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      background:
+        linear-gradient(90deg, rgba(245, 251, 255, 0.96) 0%, rgba(245, 251, 255, 0.82) 38%, rgba(245, 251, 255, 0.12) 78%),
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(225,242,255,0.18));
+    }
+
+    .brand {
+      position: absolute;
+      top: 96px;
+      left: 120px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 29px;
+      font-weight: 780;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1b5ca8;
+    }
+
+    .brand img {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      box-shadow: 0 16px 42px rgba(29, 87, 172, 0.2);
+    }
+
+    .content {
+      position: absolute;
+      inset: 210px 120px 110px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 1420px;
+      font-size: 142px;
+      line-height: 0.98;
+      letter-spacing: -0.058em;
+      font-weight: 790;
+    }
+
+    h1 .accent { color: var(--blue); }
+
+    .lede {
+      margin: 48px 0 0;
+      max-width: 1120px;
+      font-size: 49px;
+      line-height: 1.28;
+      letter-spacing: -0.025em;
+      color: var(--ink-soft);
+    }
+
+    .eyebrow {
+      margin-bottom: 26px;
+      font-size: 31px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--blue);
+    }
+
+    .settings-shot {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 34px;
+    }
+
+    .shot-shell {
+      position: absolute;
+      overflow: hidden;
+      padding: 16px;
+      border: 1px solid rgba(22, 119, 234, 0.25);
+      border-radius: 58px;
+      background: rgba(255, 255, 255, 0.46);
+      box-shadow: 0 70px 150px rgba(13, 59, 119, 0.24);
+      backdrop-filter: blur(30px);
+    }
+
+    .key-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .key {
+      display: inline-flex;
+      min-width: 92px;
+      height: 92px;
+      padding: 0 24px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(7, 23, 51, 0.1);
+      border-bottom-width: 7px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 40px rgba(18, 75, 144, 0.13);
+      font-size: 49px;
+      font-weight: 720;
+      color: var(--ink);
+    }
+
+    .key.letter { background: var(--yellow); }
+
+    .shortcut-card {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 25px;
+      padding: 32px 36px 38px;
+      border: 1px solid rgba(22, 119, 234, 0.2);
+      border-radius: 36px;
+      background: rgba(255, 255, 255, 0.62);
+      box-shadow: 0 32px 76px rgba(15, 79, 158, 0.16);
+      backdrop-filter: blur(24px);
+    }
+
+    .shortcut-card .label {
+      font-size: 28px;
+      font-weight: 760;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #55708f;
+    }
+
+    .footer-note {
+      position: absolute;
+      left: 120px;
+      bottom: 76px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-size: 29px;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #2e6eb8;
+    }
+
+    .footer-note::before {
+      content: "";
+      width: 84px;
+      height: 5px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    /* 01 — hero */
+    #slide-1 .content { padding-top: 105px; }
+    #slide-1 h1 { max-width: 1240px; font-size: 154px; }
+    #slide-1 .lede { max-width: 970px; }
+    #slide-1 .shortcut-card { position: absolute; left: 0; bottom: 88px; }
+    #slide-1 .shot-shell {
+      width: 1320px;
+      height: 1160px;
+      right: 5px;
+      top: 35px;
+      transform: rotate(1.2deg);
+    }
+
+    /* 02 — open/hide */
+    #slide-2 .wash {
+      background: linear-gradient(180deg, rgba(246, 251, 255, 0.86), rgba(232, 245, 255, 0.38));
+    }
+    #slide-2 h1 { max-width: 1700px; }
+    #slide-2 .lede { max-width: 1440px; }
+    .toggle-flow {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 30px;
+      display: grid;
+      grid-template-columns: 1fr 210px 1fr;
+      align-items: center;
+      gap: 35px;
+    }
+    .state-card {
+      position: relative;
+      height: 680px;
+      padding: 55px;
+      overflow: hidden;
+      border: 1px solid rgba(22, 119, 234, 0.22);
+      border-radius: 58px;
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 60px 120px rgba(15, 71, 138, 0.18);
+      backdrop-filter: blur(24px);
+    }
+    .state-tag {
+      display: inline-flex;
+      padding: 14px 24px;
+      border-radius: 999px;
+      background: #e2f1ff;
+      font-size: 28px;
+      font-weight: 800;
+      color: #176ccf;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .fake-window {
+      position: absolute;
+      left: 55px;
+      right: 55px;
+      top: 145px;
+      bottom: 55px;
+      overflow: hidden;
+      border: 1px solid rgba(7, 23, 51, 0.13);
+      border-radius: 34px;
+      background: #fff;
+      box-shadow: 0 35px 75px rgba(21, 67, 120, 0.16);
+    }
+    .fake-titlebar {
+      height: 84px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 0 26px;
+      background: #f4f6f8;
+      border-bottom: 1px solid #e2e8ef;
+    }
+    .traffic { width: 22px; height: 22px; border-radius: 50%; }
+    .traffic.red { background: #ff6158; }
+    .traffic.yellow { background: #ffbd2e; }
+    .traffic.green { background: #28c941; }
+    .browser-body {
+      display: flex;
+      height: calc(100% - 84px);
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #eff7ff, #ffffff 65%);
+    }
+    .browser-mark {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      font-size: 62px;
+      font-weight: 760;
+    }
+    .app-dot {
+      display: inline-grid;
+      width: 112px;
+      height: 112px;
+      place-items: center;
+      border-radius: 31px;
+      background: linear-gradient(145deg, #38a5ff, #3758e8);
+      box-shadow: 0 22px 48px rgba(55, 88, 232, 0.26);
+      color: white;
+      font-size: 64px;
+    }
+    .state-card.hidden .fake-window {
+      top: 255px;
+      left: 145px;
+      right: 145px;
+      bottom: 125px;
+      opacity: 0.34;
+      transform: scale(0.78) translateY(95px);
+      filter: saturate(0.2) blur(1px);
+    }
+    .hidden-symbol {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hidden-symbol span {
+      display: grid;
+      width: 190px;
+      height: 190px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 30px 70px rgba(113, 88, 4, 0.19);
+      font-size: 88px;
+      font-weight: 820;
+    }
+    .flow-arrow {
+      display: grid;
+      place-items: center;
+      width: 170px;
+      height: 170px;
+      margin: auto;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 28px 60px rgba(22, 119, 234, 0.28);
+      color: #fff;
+      font-size: 92px;
+      font-weight: 720;
+    }
+    .flow-keys {
+      position: absolute;
+      right: 46px;
+      top: 39px;
+      display: flex;
+      gap: 12px;
+    }
+    .flow-keys .key { min-width: 62px; height: 62px; padding: 0 15px; border-radius: 15px; font-size: 32px; border-bottom-width: 4px; }
+
+    /* 03 — hotkeys */
+    #slide-3 .wash {
+      background: linear-gradient(90deg, rgba(246, 251, 255, 0.94), rgba(240, 249, 255, 0.44));
+    }
+    #slide-3 h1 { max-width: 1640px; font-size: 132px; }
+    #slide-3 .shot-shell {
+      width: 1400px;
+      height: 1210px;
+      left: 0;
+      bottom: -92px;
+    }
+    .hotkey-list {
+      position: absolute;
+      right: 0;
+      top: 410px;
+      width: 1070px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+    .hotkey-row {
+      display: flex;
+      min-height: 168px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 27px 34px 27px 46px;
+      border: 1px solid rgba(22, 119, 234, 0.22);
+      border-radius: 36px;
+      background: rgba(255,255,255,0.76);
+      box-shadow: 0 28px 64px rgba(18, 77, 147, 0.14);
+      backdrop-filter: blur(22px);
+    }
+    .app-name {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      font-size: 48px;
+      font-weight: 760;
+    }
+    .app-name .app-dot { width: 82px; height: 82px; border-radius: 24px; font-size: 41px; }
+    .hotkey-row:nth-child(2) .app-dot { background: linear-gradient(145deg, #ffd84f, #ff9f2d); color: #513800; }
+    .hotkey-row:nth-child(3) .app-dot { background: linear-gradient(145deg, #3a4452, #111927); }
+    .mini-keys { display: flex; gap: 10px; }
+    .mini-keys .key { min-width: 70px; height: 70px; padding: 0 16px; border-radius: 17px; font-size: 34px; border-bottom-width: 5px; }
+    .setup-line {
+      position: absolute;
+      top: 360px;
+      right: 0;
+      width: 1070px;
+      margin: 0;
+      font-size: 34px;
+      font-weight: 720;
+      color: #37638f;
+    }
+    #slide-3 .footer-note { left: auto; right: 120px; }
+
+    /* 04 — menu bar */
+    #slide-4 .wash { background: rgba(238, 247, 255, 0.58); }
+    #slide-4 h1 { max-width: 1220px; font-size: 134px; }
+    #slide-4 .lede { max-width: 1010px; }
+    .benefits {
+      position: absolute;
+      left: 0;
+      bottom: 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .benefit {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      font-size: 37px;
+      font-weight: 690;
+      color: #284765;
+    }
+    .check {
+      display: grid;
+      width: 58px;
+      height: 58px;
+      place-items: center;
+      border-radius: 18px;
+      background: var(--yellow);
+      color: #322b00;
+      font-size: 34px;
+      font-weight: 900;
+    }
+    .desktop-card {
+      position: absolute;
+      right: 0;
+      top: 105px;
+      width: 1435px;
+      height: 1175px;
+      overflow: hidden;
+      border: 1px solid rgba(22,119,234,0.25);
+      border-radius: 64px;
+      background:
+        radial-gradient(circle at 72% 76%, rgba(37, 119, 245, 0.62), transparent 34%),
+        linear-gradient(145deg, #e7f5ff 0%, #bbdcff 55%, #766df3 112%);
+      box-shadow: 0 70px 145px rgba(12, 60, 125, 0.24);
+    }
+    .menu-bar {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 31px;
+      background: rgba(246, 249, 252, 0.82);
+      border-bottom: 1px solid rgba(7,23,51,0.12);
+      backdrop-filter: blur(26px);
+      font-size: 28px;
+      font-weight: 620;
+    }
+    .menu-right { display: flex; align-items: center; gap: 27px; }
+    .bolt-status {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border-radius: 50%;
+      background: #111b2c;
+      color: #fff;
+      font-size: 27px;
+      transform: rotate(-8deg);
+    }
+    .dropdown {
+      position: absolute;
+      top: 82px;
+      right: 90px;
+      width: 560px;
+      padding: 18px;
+      border: 1px solid rgba(7,23,51,0.16);
+      border-radius: 28px;
+      background: rgba(252, 253, 255, 0.92);
+      box-shadow: 0 42px 90px rgba(4, 31, 72, 0.28);
+      backdrop-filter: blur(34px);
+    }
+    .menu-item {
+      display: flex;
+      height: 76px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-radius: 16px;
+      font-size: 31px;
+      font-weight: 570;
+    }
+    .menu-item.active { background: #1677ea; color: #fff; }
+    .menu-item .count { opacity: 0.55; }
+    .menu-divider { height: 1px; margin: 12px 6px; background: rgba(7,23,51,0.14); }
+    .desktop-icon {
+      position: absolute;
+      left: 90px;
+      bottom: 100px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      color: #fff;
+      font-size: 44px;
+      font-weight: 760;
+      text-shadow: 0 4px 15px rgba(3,32,86,0.25);
+    }
+    .desktop-icon img { width: 134px; height: 134px; border-radius: 30px; box-shadow: 0 25px 55px rgba(4,31,72,0.25); }
+
+    /* 05 — privacy */
+    #slide-5 .wash {
+      background: linear-gradient(90deg, rgba(246,251,255,0.98), rgba(239,248,255,0.54) 60%, rgba(239,248,255,0.12));
+    }
+    #slide-5 h1 { max-width: 1500px; font-size: 130px; }
+    #slide-5 .lede { max-width: 1240px; }
+    .privacy-grid {
+      position: absolute;
+      left: 0;
+      bottom: 50px;
+      width: 1420px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+    .privacy-card {
+      min-height: 310px;
+      padding: 38px;
+      border: 1px solid rgba(22,119,234,0.18);
+      border-radius: 38px;
+      background: rgba(255,255,255,0.72);
+      box-shadow: 0 30px 72px rgba(17,75,143,0.13);
+      backdrop-filter: blur(22px);
+    }
+    .privacy-icon {
+      display: grid;
+      width: 86px;
+      height: 86px;
+      margin-bottom: 34px;
+      place-items: center;
+      border-radius: 25px;
+      background: #dceeff;
+      font-size: 46px;
+    }
+    .privacy-card h2 { margin: 0 0 14px; font-size: 37px; letter-spacing: -0.03em; }
+    .privacy-card p { margin: 0; font-size: 27px; line-height: 1.35; color: #49627e; }
+    .privacy-visual {
+      position: absolute;
+      right: 30px;
+      top: 65px;
+      width: 1000px;
+      height: 1200px;
+      display: grid;
+      place-items: center;
+    }
+    .shield {
+      position: absolute;
+      width: 760px;
+      height: 870px;
+      clip-path: polygon(50% 0, 93% 16%, 87% 68%, 50% 100%, 13% 68%, 7% 16%);
+      background: linear-gradient(160deg, rgba(255,255,255,0.94), rgba(198,227,255,0.82));
+      border: 2px solid rgba(22,119,234,0.2);
+      filter: drop-shadow(0 65px 85px rgba(14,67,139,0.2));
+    }
+    .privacy-visual img {
+      position: relative;
+      width: 410px;
+      height: 410px;
+      border-radius: 92px;
+      box-shadow: 0 46px 100px rgba(23,78,159,0.32);
+    }
+    .local-pill {
+      position: absolute;
+      bottom: 150px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 22px 34px;
+      border-radius: 999px;
+      background: var(--yellow);
+      box-shadow: 0 25px 60px rgba(99,77,1,0.17);
+      font-size: 31px;
+      font-weight: 780;
+    }
+  </style>
+</head>
+<body>
+  <section class="slide" id="slide-1">
+    <img class="backdrop" src="assets/background-imagegen.png" alt="">
+    <div class="wash"></div>
+    <div class="brand"><img src="assets/boltlauncher-icon.png" alt=""> BoltLauncher</div>
+    <main class="content">
+      <div class="eyebrow">Global hotkeys for macOS</div>
+      <h1>Launch any Mac app with <span class="accent">one shortcut.</span></h1>
+      <p class="lede">Skip the Dock and switch to the app you need from anywhere.</p>
+      <div class="shortcut-card">
+        <span class="label">Example · Safari</span>
+        <div class="key-row"><span class="key">⌥</span><span class="key">⌘</span><span class="key letter">S</span></div>
+      </div>
+      <div class="shot-shell"><img class="settings-shot" src="assets/settings-window.png" alt="BoltLauncher Settings"></div>
+    </main>
+    <div class="footer-note">Set once · Use anywhere</div>
+  </section>
+
+  <section class="slide" id="slide-2">
+    <img class="backdrop" src="assets/background-imagegen.png" alt="">
+    <div class="wash"></div>
+    <div class="brand"><img src="assets/boltlauncher-icon.png" alt=""> BoltLauncher</div>
+    <main class="content">
+      <div class="eyebrow">Open · Switch · Hide</div>
+      <h1>Press again to <span class="accent">hide it.</span></h1>
+      <p class="lede">The same shortcut brings an app forward—or gets it out of your way.</p>
+      <div class="toggle-flow">
+        <div class="state-card">
+          <span class="state-tag">First press · Open</span>
+          <div class="flow-keys"><span class="key">⌥</span><span class="key">⌘</span><span class="key letter">S</span></div>
+          <div class="fake-window">
+            <div class="fake-titlebar"><i class="traffic red"></i><i class="traffic yellow"></i><i class="traffic green"></i></div>
+            <div class="browser-body"><div class="browser-mark"><span class="app-dot">S</span> Safari is ready</div></div>
+          </div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="state-card hidden">
+          <span class="state-tag">Second press · Hide</span>
+          <div class="flow-keys"><span class="key">⌥</span><span class="key">⌘</span><span class="key letter">S</span></div>
+          <div class="hidden-symbol"><span>⌄</span></div>
+          <div class="fake-window">
+            <div class="fake-titlebar"><i class="traffic red"></i><i class="traffic yellow"></i><i class="traffic green"></i></div>
+            <div class="browser-body"><div class="browser-mark"><span class="app-dot">S</span> Safari</div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="footer-note">One shortcut · Two actions</div>
+  </section>
+
+  <section class="slide" id="slide-3">
+    <img class="backdrop" src="assets/background-imagegen.png" alt="">
+    <div class="wash"></div>
+    <div class="brand"><img src="assets/boltlauncher-icon.png" alt=""> BoltLauncher</div>
+    <main class="content">
+      <div class="eyebrow">Make it yours</div>
+      <h1>Choose global hotkeys <span class="accent">you remember.</span></h1>
+      <div class="setup-line">Add an app. Record a shortcut. Done.</div>
+      <div class="shot-shell"><img class="settings-shot" src="assets/settings-window.png" alt="BoltLauncher Settings"></div>
+      <div class="hotkey-list">
+        <div class="hotkey-row">
+          <div class="app-name"><span class="app-dot">S</span> Safari</div>
+          <div class="mini-keys"><span class="key">⌥</span><span class="key">⌘</span><span class="key letter">S</span></div>
+        </div>
+        <div class="hotkey-row">
+          <div class="app-name"><span class="app-dot">N</span> Notes</div>
+          <div class="mini-keys"><span class="key">⌥</span><span class="key">⌘</span><span class="key letter">N</span></div>
+        </div>
+        <div class="hotkey-row">
+          <div class="app-name"><span class="app-dot">C</span> Calculator</div>
+          <div class="mini-keys"><span class="key">⌥</span><span class="key">⌘</span><span class="key letter">C</span></div>
+        </div>
+      </div>
+    </main>
+    <div class="footer-note">Real Mac app · Real settings</div>
+  </section>
+
+  <section class="slide" id="slide-4">
+    <img class="backdrop" src="assets/background-imagegen.png" alt="">
+    <div class="wash"></div>
+    <div class="brand"><img src="assets/boltlauncher-icon.png" alt=""> BoltLauncher</div>
+    <main class="content">
+      <div class="eyebrow">Quietly available</div>
+      <h1>Always ready in your <span class="accent">menu bar.</span></h1>
+      <p class="lede">Your shortcuts stay close without another window living in the Dock.</p>
+      <div class="benefits">
+        <div class="benefit"><span class="check">✓</span>Launch counts at a glance</div>
+        <div class="benefit"><span class="check">✓</span>Settings one click away</div>
+        <div class="benefit"><span class="check">✓</span>Optional launch at login</div>
+      </div>
+      <div class="desktop-card">
+        <div class="menu-bar">
+          <span>● &nbsp; Finder &nbsp;&nbsp; File &nbsp;&nbsp; Edit &nbsp;&nbsp; View</span>
+          <div class="menu-right"><span>⌁</span><span>◖</span><span class="bolt-status">ϟ</span><span>Tue 9:41</span></div>
+        </div>
+        <div class="dropdown">
+          <div class="menu-item active"><span>Safari</span><span class="count">12 launches</span></div>
+          <div class="menu-item"><span>Notes</span><span class="count">8 launches</span></div>
+          <div class="menu-item"><span>Calculator</span><span class="count">5 launches</span></div>
+          <div class="menu-divider"></div>
+          <div class="menu-item"><span>Settings…</span></div>
+          <div class="menu-item"><span>Quit</span></div>
+        </div>
+        <div class="desktop-icon"><img src="assets/boltlauncher-icon.png" alt=""> One click away when you want it.</div>
+      </div>
+    </main>
+    <div class="footer-note">Fast access · Less clutter</div>
+  </section>
+
+  <section class="slide" id="slide-5">
+    <img class="backdrop" src="assets/background-imagegen.png" alt="">
+    <div class="wash"></div>
+    <div class="brand"><img src="assets/boltlauncher-icon.png" alt=""> BoltLauncher</div>
+    <main class="content">
+      <div class="eyebrow">Private by design</div>
+      <h1><span class="accent">100% offline.</span><br>No account. No tracking.</h1>
+      <p class="lede">Your apps, shortcuts, permissions, and launch counts stay on your Mac.</p>
+      <div class="privacy-grid">
+        <div class="privacy-card"><div class="privacy-icon">⌁</div><h2>Works offline</h2><p>No cloud service is required to launch your apps.</p></div>
+        <div class="privacy-card"><div class="privacy-icon">⌂</div><h2>Stored locally</h2><p>Settings and simple launch counts remain on this Mac.</p></div>
+        <div class="privacy-card"><div class="privacy-icon">◎</div><h2>No analytics</h2><p>No account, behavioral tracking, or advertising profile.</p></div>
+      </div>
+      <div class="privacy-visual">
+        <div class="shield"></div>
+        <img src="assets/boltlauncher-icon.png" alt="BoltLauncher icon">
+        <div class="local-pill">● &nbsp; Nothing leaves your Mac</div>
+      </div>
+    </main>
+    <div class="footer-note">Focused utility · Private workflow</div>
+  </section>
+
+  <script>
+    const requested = Number(new URLSearchParams(location.search).get("slide") || "1");
+    const slide = document.getElementById(`slide-${Math.min(5, Math.max(1, requested))}`);
+    slide.classList.add("active");
+  </script>
+</body>
+</html>

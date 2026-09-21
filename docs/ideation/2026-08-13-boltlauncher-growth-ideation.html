@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BoltLauncher 增长与销售构想</title>
+  <style>
+    :root {
+      --ink: #191814;
+      --muted: #68645a;
+      --paper: #f6f2e8;
+      --card: #fffdf7;
+      --line: #d8d0c0;
+      --accent: #e8653b;
+      --accent-soft: #f8d9cb;
+      --green: #326b50;
+      --shadow: 0 18px 50px rgba(49, 40, 24, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 90% 4%, rgba(232, 101, 59, 0.13), transparent 26rem),
+        var(--paper);
+      font: 16px/1.65 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    }
+
+    a { color: inherit; }
+    .page { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    .hero { padding: 72px 0 48px; }
+    .eyebrow {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3 { line-height: 1.12; letter-spacing: -0.035em; }
+    h1 { max-width: 820px; margin: 14px 0 18px; font-size: clamp(44px, 8vw, 88px); }
+    h2 { margin: 0 0 24px; font-size: clamp(30px, 4vw, 48px); }
+    h3 { margin: 0; font-size: 25px; }
+    p { margin: 0; }
+    .lede { max-width: 720px; color: var(--muted); font-size: 20px; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .meta strong { color: var(--ink); }
+
+    section { padding: 52px 0; border-top: 1px solid var(--line); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .panel, .idea {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 28px; }
+    .callout {
+      padding: 24px;
+      background: var(--ink);
+      color: #fffaf0;
+      border-radius: 18px;
+    }
+    .callout strong { color: #ffb899; }
+    .small { color: var(--muted); font-size: 14px; }
+
+    .funnel {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .funnel-step {
+      min-height: 108px;
+      display: grid;
+      align-content: center;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.62);
+      text-align: center;
+    }
+    .funnel-step b { display: block; font-size: 18px; }
+    .funnel-step span { color: var(--muted); font-size: 13px; }
+    .arrow { color: var(--accent); font-size: 27px; font-weight: 800; }
+
+    .axes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .axis {
+      min-height: 142px;
+      padding: 18px;
+      border-top: 4px solid var(--accent);
+      background: rgba(255,255,255,0.52);
+      border-radius: 0 0 14px 14px;
+    }
+    .axis b { display: block; margin-bottom: 8px; }
+    .axis span { color: var(--muted); font-size: 13px; }
+
+    .jump-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 26px;
+      padding: 0;
+      list-style: none;
+    }
+    .jump-list a {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.52);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .ideas { display: grid; gap: 18px; }
+    .idea { padding: 28px; }
+    .idea-top { display: flex; align-items: flex-start; gap: 18px; }
+    .rank {
+      flex: 0 0 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .top-pick { border: 2px solid var(--accent); }
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #7d2c13;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 24px;
+      margin: 24px 0 0 66px;
+    }
+    .field dt {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+    .field dd { margin: 5px 0 0; }
+    .scores {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .score {
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #edf4ef;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    table { width: 100%; border-collapse: collapse; background: var(--card); }
+    th, td { padding: 15px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    footer { padding: 36px 0 60px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 820px) {
+      .grid-2, .fields { grid-template-columns: 1fr; }
+      .axes { grid-template-columns: 1fr 1fr; }
+      .funnel { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); text-align: center; }
+      .fields { margin-left: 0; }
+    }
+    @media (max-width: 520px) {
+      .page { width: min(100% - 24px, 1120px); }
+      .hero { padding-top: 44px; }
+      .axes { grid-template-columns: 1fr; }
+      .idea { padding: 20px; }
+      .idea-top { gap: 12px; }
+      .rank { flex-basis: 40px; height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="eyebrow">BoltLauncher / Growth Ideation</div>
+      <h1>先让人一眼想买，再让更多人看见。</h1>
+      <p class="lede">针对 BoltLauncher 当前“约 100 次展示、接近 0 购买”的用户报告，目标不是粗暴增加流量，而是把独特价值讲清、建立信任，再扩展高意图曝光。</p>
+      <div class="meta">
+        <span><strong>Date</strong> 2026-08-13</span>
+        <span><strong>Topic</strong> boltlauncher-growth</span>
+        <span><strong>Focus</strong> 曝光、转化与付费增长</span>
+        <span><strong>Mode</strong> repo-grounded</span>
+      </div>
+    </header>
+
+    <section id="grounding">
+      <h2>Grounding Context</h2>
+      <div class="grid-2">
+        <div class="panel">
+          <p><strong>产品事实：</strong>BoltLauncher 是一款完全离线的 macOS 菜单栏工具。用户给任意 App 设置全局快捷键；按一次打开或切换，再按一次隐藏。</p>
+          <p class="small" style="margin-top: 14px;">当前商店文案已覆盖 hotkey、productivity、menu bar、window control 等词，但核心差异“同一快捷键完成打开/隐藏切换”还没有成为唯一主角。</p>
+        </div>
+        <div class="callout">
+          <p><strong>关键诊断：</strong>展示不多，但近乎零购买，说明曝光和转化同时偏弱。此时买广告像给漏水桶加大水龙头——账单先涨，销量未必动。</p>
+          <p style="margin-top: 12px;">先验证商店页能把高意图访客变成购买，再扩大渠道。</p>
+        </div>
+      </div>
+      <div class="funnel" aria-label="增长漏斗">
+        <div class="funnel-step"><b>高意图曝光</b><span>搜索、社区、评测</span></div>
+        <div class="arrow">→</div>
+        <div class="funnel-step"><b>产品页理解</b><span>8 秒看懂独特价值</span></div>
+        <div class="arrow">→</div>
+        <div class="funnel-step"><b>购买与口碑</b><span>可信、低摩擦、可复用</span></div>
+      </div>
+    </section>
+
+    <section id="axes">
+      <h2>Topic Axes</h2>
+      <div class="axes">
+        <div class="axis"><b>搜索发现</b><span>用户是否用准确的问题词找到它，而不是淹没在“productivity”海里。</span></div>
+        <div class="axis"><b>商店页转化</b><span>名称、副标题、预览和截图能否在数秒内解释“为什么要付钱”。</span></div>
+        <div class="axis"><b>外部分发</b><span>从泛流量转向键盘重度用户、Mac 工具读者与具体工作流。</span></div>
+        <div class="axis"><b>价格与模型</b><span>一次性付费是否成为体验门槛，以及何时才值得测试免费入口。</span></div>
+        <div class="axis"><b>测量与信任</b><span>用来源、转化和真实评价判断增长，不拿浏览量自我感动。</span></div>
+      </div>
+    </section>
+
+    <section id="ranked">
+      <h2>Ranked Ideas</h2>
+      <ul class="jump-list">
+        <li><a href="#idea-1">1. 一键切换主叙事</a></li>
+        <li><a href="#idea-2">2. 高意图 ASO 与本地化</a></li>
+        <li><a href="#idea-3">3. 种子用户与自然评价</a></li>
+        <li><a href="#idea-4">4. 专用落地页</a></li>
+        <li><a href="#idea-5">5. 场景化短视频</a></li>
+        <li><a href="#idea-6">6. 免费试用层</a></li>
+        <li><a href="#idea-7">7. 评测者礼包</a></li>
+      </ul>
+
+      <div class="ideas">
+        <article class="idea top-pick" id="idea-1">
+          <div class="idea-top"><div class="rank">1</div><div><h3>占领“一键打开，再按隐藏”的主叙事</h3><span class="badge">Top pick</span></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>把现有 18 秒方形视频重制为 8–12 秒、16:9 横屏、静音也能看懂的 Mac App Store 预览；前三秒直接演示同一快捷键打开与隐藏 App。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>商店页转化</dd></div>
+            <div class="field"><dt>Basis</dt><dd>仓库功能与现有商店素材；Apple 允许 macOS 产品页最多展示 3 个横屏 App Preview，且预览位于截图之前。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>它把“又一个启动器”变成“少一次找窗口、点 Dock 和 Command-Tab 的肌肉记忆工具”，最快降低理解成本。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>需要重新剪辑横屏版本，并确保画面只展示真实 App 行为；仅换素材不能解决关键词覆盖不足。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">94% confidence</span><span class="score">Medium</span></div></dd></div>
+          </dl>
+        </article>
+
+        <article class="idea" id="idea-2">
+          <div class="idea-top"><div class="rank">2</div><div><h3>高意图 ASO 与三语本地化</h3></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>从泛词转向具体意图词，如 app switcher、hide app、global hotkey、keyboard launcher；为简体中文、日文、德文分别改写名称/副标题/关键词与截图文字，而非机械翻译。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>搜索发现</dd></div>
+            <div class="field"><dt>Basis</dt><dd>Apple 搜索会参考标题、副标题、关键词、主类别及用户行为；关键词字段限制 100 字符，并建议避免重复标题已有词。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>小工具更可能在具体、低竞争的问题词上赢，而不是在“productivity”这种宇宙级大词里当背景板。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>需要逐语言研究和迭代；频繁更换会让归因变乱，建议按版本记录曝光与转化。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">90% confidence</span><span class="score">Medium</span></div></dd></div>
+          </dl>
+        </article>
+
+        <article class="idea" id="idea-3">
+          <div class="idea-top"><div class="rank">3</div><div><h3>建立 20 人种子用户组，争取自然评价</h3></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>邀请 20 位键盘重度用户完成真实设置任务，记录卡点和他们复述价值的原话；在用户多次成功触发快捷键后，用 StoreKit 标准接口请求评分。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>测量与信任</dd></div>
+            <div class="field"><dt>Basis</dt><dd>Apple 明确说明评分与评论会显示在产品页和搜索结果中，并可能影响搜索排名；提示应放在用户满意时刻。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>早期用户既能找出购买障碍，也能提供比开发者自嗨文案更可信的表达；真实评分补上付费新品最缺的信任。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>不能诱导好评；系统不保证每次显示评分框。用促销码下载的用户不能留下评分或评论。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">88% confidence</span><span class="score">Medium</span></div></dd></div>
+          </dl>
+        </article>
+
+        <article class="idea" id="idea-4">
+          <div class="idea-top"><div class="rank">4</div><div><h3>用专用落地页替代 GitHub 营销地址</h3></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>制作一个首屏即演示“一键切换”的轻量网站，并发布 3 个问题型页面：如何用快捷键打开 Mac App、如何一键隐藏当前 App、Mac 键盘工作流。所有外链使用 UTM。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>外部分发</dd></div>
+            <div class="field"><dt>Basis</dt><dd>当前 Marketing URL 指向 GitHub；仓库页面适合开发者查代码，不适合普通购买者在数秒内理解价值并建立信任。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>网站能承接搜索、视频和社区流量，回答购买前问题，并测出哪个渠道带来真正的商店点击。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>需要维护域名、部署和基础隐私分析；SEO 起量慢，不能假装今天写、明天霸榜。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">86% confidence</span><span class="score">Medium</span></div></dd></div>
+          </dl>
+        </article>
+
+        <article class="idea" id="idea-5">
+          <div class="idea-top"><div class="rank">5</div><div><h3>把功能视频改造成三种工作流短片</h3></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>复用现有素材，分别制作“开发者终端/浏览器切换”“写作者沉浸与隐藏干扰”“会议中秒开常用 App”三个 10–20 秒版本，原生发布到 V2EX、X、Bilibili 与相关社区。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>外部分发</dd></div>
+            <div class="field"><dt>Basis</dt><dd>现有 18 秒英文配音视频已经可用，但通用功能介绍没有回答不同人群“这与我有什么关系”。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>具体场景比功能列表更容易被转发，也能把评论区问题变成下一条内容；每条使用独立 UTM 识别有效渠道。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>需要持续发布与回复，不是一次上传后等宇宙替你营销；渠道观众与购买者可能不重合。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">83% confidence</span><span class="score">Medium</span></div></dd></div>
+          </dl>
+        </article>
+
+        <article class="idea" id="idea-6">
+          <div class="idea-top"><div class="rank">6</div><div><h3>达到样本门槛后，测试“免费体验 + 终身解锁”</h3></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>只有在累计 500+ 次相关产品页浏览且转化仍低于 2% 时，再考虑允许免费设置 1–2 个快捷键，并用约 2.99 美元的一次性内购解锁无限 App。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>价格与模型</dd></div>
+            <div class="field"><dt>Basis</dt><dd>当前付费下载要求用户在体验前相信价值，但约 100 次展示样本太小，不能立刻断言价格就是主因。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>免费入口可提高安装量和使用证据，同时保留清晰的一次性付费价值；以条件触发避免过早重写商业模型。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>需要 StoreKit、购买恢复和更多审核测试；会改变现有用户权益与收入结构，不能拍脑袋上线。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">73% confidence</span><span class="score">High</span></div></dd></div>
+          </dl>
+        </article>
+
+        <article class="idea" id="idea-7">
+          <div class="idea-top"><div class="rank">7</div><div><h3>制作评测者礼包，定向投递 15 位小型创作者</h3></div></div>
+          <dl class="fields">
+            <div class="field"><dt>Description</dt><dd>准备一句话定位、10 秒无声演示、5 张截图、隐私说明、价格和 15 个 macOS 促销码，定向联系 Mac 工具评测者、效率通讯与 YouTube 小频道。</dd></div>
+            <div class="field"><dt>Axis</dt><dd>外部分发</dd></div>
+            <div class="field"><dt>Basis</dt><dd>Apple 允许每个 App 版本、每个平台最多申请 100 个促销码，代码有效期四周。</dd></div>
+            <div class="field"><dt>Rationale</dt><dd>小而精准的受众更匹配独立 Mac 工具；给创作者完整素材能减少他们理解与制作成本。</dd></div>
+            <div class="field"><dt>Downsides</dt><dd>回应率可能很低；促销码只能用于体验和报道，兑换用户不能评分，绝不能拿它伪造口碑。</dd></div>
+            <div class="field"><dt>Confidence / Complexity</dt><dd><div class="scores"><span class="score">78% confidence</span><span class="score">Low</span></div></dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="rejections">
+      <h2>Rejection Summary</h2>
+      <div class="panel" style="overflow-x:auto; padding:0;">
+        <table>
+          <thead><tr><th>被淘汰或合并的想法</th><th>原因</th></tr></thead>
+          <tbody>
+            <tr><td>独立公证试用版</td><td>许可证、更新与支持成本过高；目标与“免费体验层”重复。</td></tr>
+            <tr><td>一次制作 10 条短视频</td><td>先做 3 个场景验证，避免内容工厂开机后只生产空气。</td></tr>
+            <tr><td>额外的公开数据看板</td><td>测量需求已并入落地页与 UTM；早期无需另造系统。</td></tr>
+            <tr><td>立即涨价到 2.99 美元</td><td>尚无足够转化基线，先修价值表达和体验门槛。</td></tr>
+            <tr><td>7 天效率挑战</td><td>传播机制过于推测，产品当前还没有足够用户密度。</td></tr>
+            <tr><td>先投 Apple Ads</td><td>未验证 BoltLauncher 的 macOS 广告资格，且零转化漏斗不值得立即付费放大。</td></tr>
+            <tr><td>Product Page Optimization A/B</td><td>Apple 当前该功能面向 iOS/iPadOS 产品页，不适用于 macOS。</td></tr>
+            <tr><td>用促销码换评分</td><td>事实冲突：促销码兑换用户不能留下评分或评论。</td></tr>
+            <tr><td>泛投 Product Hunt / X</td><td>受众意图过低；优先场景化内容和小型 Mac 工具渠道。</td></tr>
+            <tr><td>独立文案访谈与工作流配方</td><td>分别合并进种子用户组与场景化短视频，减少重复执行。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small" style="margin-top:16px;">研究说明：本轮基于 BoltLauncher 仓库、现有商店素材和 Apple 官方文档完成。受当前执行环境约束，未进行独立子代理交叉验证；低置信度或资格未确认的建议已降级为条件动作或直接淘汰。</p>
+    </section>
+
+    <section id="sources">
+      <h2>Official References</h2>
+      <div class="panel">
+        <p><a href="https://developer.apple.com/app-store/search/">Apple — App Store Search</a></p>
+        <p><a href="https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots">Apple — Upload app previews and screenshots</a></p>
+        <p><a href="https://developer.apple.com/app-store/ratings-and-reviews/">Apple — Ratings, reviews, and responses</a></p>
+        <p><a href="https://developer.apple.com/help/app-store-connect/offer-promo-codes/request-and-manage-promo-codes">Apple — Request and manage promo codes</a></p>
+        <p><a href="https://developer.apple.com/help/app-store-connect/create-product-page-optimization-tests/overview-of-product-page-optimization">Apple — Product page optimization overview</a></p>
+      </div>
+    </section>
+
+    <footer>
+      Composed 2026-08-13  ·  Source: ce-ideate from current user prompt and BoltLauncher repository
+    </footer>
+  </main>
+</body>
+</html>
