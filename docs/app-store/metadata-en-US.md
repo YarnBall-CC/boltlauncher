@@ -10,9 +10,9 @@ BoltLauncher
 
 Mac launcher & work scenes
 
-## Promotional text (115/170 characters)
+## Promotional text (125/170 characters)
 
-New in 1.1: launch apps, websites, files, and folders as one Work Scene, then hide its apps with the same shortcut.
+Launch your coding or meeting setup with one Work Scene shortcut. Press again to hide its apps; websites and files stay open.
 
 ## Description
 
@@ -41,9 +41,9 @@ Requires macOS 13 or later.
 
 Work Scenes are here. Open a group of apps and optional websites, files, or folders with one shortcut. Press it again to hide the scene's apps. This update also improves app activation and file access reliability.
 
-## Keywords (98/100 characters)
+## Keywords (99/100 characters)
 
-hotkey,shortcut,keyboard,menu bar,window switcher,quick access,workflow,open,hide,activate,offline
+hotkey,shortcut,keyboard,menu bar,switcher,quick access,workspace,workflow,toggle,hide,focus,global
 
 ## URLs
 
@@ -56,3 +56,7 @@ hotkey,shortcut,keyboard,menu bar,window switcher,quick access,workflow,open,hid
 
 - Primary: Utilities
 - Secondary: Productivity
+
+## Next screenshot update (not yet created)
+
+The live 1.1.0 listing still shows the five 1.0.1 screenshots. Keep the first two for the individual-app open/hide promise. Replace screenshot 3 with a real Work Scene UI capture and the headline “Open your whole workflow.” This puts the new feature among the first three images that may appear in App Store search without losing the core shortcut story.
