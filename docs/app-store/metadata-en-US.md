@@ -41,6 +41,10 @@ Requires macOS 13 or later.
 
 Work Scenes are here. Open a group of apps and optional websites, files, or folders with one shortcut. Press it again to hide the scene's apps. This update also improves app activation and file access reliability.
 
+## What's New in 1.1.1 (draft)
+
+Refreshed the App Store listing to make BoltLauncher’s app shortcuts and Work Scenes easier to understand. The app itself is unchanged from 1.1.0.
+
 ## Keywords (99/100 characters)
 
 hotkey,shortcut,keyboard,menu bar,switcher,quick access,workspace,workflow,toggle,hide,focus,global
@@ -57,6 +61,6 @@ hotkey,shortcut,keyboard,menu bar,switcher,quick access,workspace,workflow,toggl
 - Primary: Utilities
 - Secondary: Productivity
 
-## Next screenshot update (not yet created)
+## Screenshot update for 1.1.1 draft
 
-The live 1.1.0 listing still shows the five 1.0.1 screenshots. Keep the first two for the individual-app open/hide promise. Replace screenshot 3 with a real Work Scene UI capture and the headline “Open your whole workflow.” This puts the new feature among the first three images that may appear in App Store search without losing the core shortcut story.
+Added `1.1.1/screenshots/03-work-scenes.png` as screenshot 3 in App Store Connect, keeping the five existing screenshots after it. The marketing composition uses an actual Work Scene settings capture from an isolated demo build (`1.1.1/assets/work-scene-window-raw.png`); the branded canvas is illustrative. The live 1.1.0 listing is unchanged until a later version is released.
